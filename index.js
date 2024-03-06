@@ -1,14 +1,23 @@
 const http = require('http');
 const { Server } = require('socket.io');
+const fs = require('fs');
 
-const server = http.createServer();
-const io = new Server(server);
+const httpServer = http.createServer((req, res) => {
+    if (req.url === '/') {
+        // Serve the HTML page for checking WebSocket state
+        res.end('Hello, World!');
+    } else {
+        res.writeHead(404);
+        res.end('Page not found');
+    }
+});
+
+const io = new Server(httpServer);
 
 let nextRoomId = 1; // Initialize the room ID counter
 
 io.on('connection', (socket) => {
     console.log('A client connected');
-
 
     socket.on('createRoom', () => {
         const roomId = `r${nextRoomId++}`; // Generate the room ID
@@ -23,7 +32,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('message', ({ room, name, text }) => {
-        console.log(`Message received in room ${room}  from ${name}: ${text}`);
+        console.log(`Message received in room ${room} from ${name}: ${text}`);
         socket.to(room).emit('message', { name, text });
     });
 
@@ -33,10 +42,7 @@ io.on('connection', (socket) => {
     });
 });
 
-
-
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Socket server running on port ${PORT}`);
+const WS_PORT = process.env.WS_PORT || 3001;
+httpServer.listen(WS_PORT, () => {
+    console.log(`WebSocket server running on port ${WS_PORT}`);
 });
